@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZMK Keymap Reference</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1d2021;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .layer {
+            background: #282828;
+            border: 2px solid #504945;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .layer-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #83a598;
+            border-bottom: 2px solid #458588;
+            padding-bottom: 8px;
+        }
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 20px 1fr;
+            gap: 0;
+        }
+        .left-hand, .right-hand {
+            display: grid;
+            gap: 6px;
+        }
+        .left-hand .row, .right-hand .row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+        .key {
+            background: #3c3836;
+            border: 2px solid #504945;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ebdbb2;
+        }
+        .key.special {
+            background: #458588;
+            color: #282828;
+            border-color: #83a598;
+        }
+        .key.modifier {
+            background: #b16286;
+            color: #282828;
+            border-color: #d3869b;
+            font-size: 0.75em;
+        }
+        .key.number {
+            background: #689d6a;
+            color: #282828;
+            border-color: #8ec07c;
+        }
+        .key.function {
+            background: #d79921;
+            color: #282828;
+            border-color: #fabd2f;
+        }
+        .key.empty {
+            background: #282828;
+            border: 2px dashed #504945;
+            color: #665c54;
+        }
+        .split-gap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #504945;
+            font-size: 2em;
+        }
+        .notes {
+            background: #3c3836;
+            border-left: 4px solid #d79921;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #ebdbb2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="layer">
+            <div class="layer-title">DEFAULT LAYER</div>
+            <div class="split">
+                <div class="left-hand">
+                    <div class="row">
+                        <div class="key special">TAB</div>
+                        <div class="key">Q</div>
+                        <div class="key">W</div>
+                        <div class="key">E</div>
+                        <div class="key">R</div>
+                        <div class="key">T</div>
+                    </div>
+                    <div class="row">
+                        <div class="key modifier">ESC/ALT</div>
+                        <div class="key">A</div>
+                        <div class="key">S</div>
+                        <div class="key">D</div>
+                        <div class="key">F</div>
+                        <div class="key">G</div>
+                    </div>
+                    <div class="row">
+                        <div class="key modifier">SHIFT</div>
+                        <div class="key">Z</div>
+                        <div class="key">X</div>
+                        <div class="key">C</div>
+                        <div class="key">V</div>
+                        <div class="key">B</div>
+                    </div>
+                    <div class="row" style="justify-content: flex-end; padding-right: 20px;">
+                        <div class="key modifier" style="grid-column: 4;">CTRL</div>
+                        <div class="key modifier" style="grid-column: 5;">GUI</div>
+                        <div class="key special" style="grid-column: 6;">SPACE</div>
+                    </div>
+                </div>
+                <div class="split-gap">│</div>
+                <div class="right-hand">
+                    <div class="row">
+                        <div class="key">Y</div>
+                        <div class="key">U</div>
+                        <div class="key">I</div>
+                        <div class="key">O</div>
+                        <div class="key">P</div>
+                        <div class="key special">BSPC</div>
+                    </div>
+                    <div class="row">
+                        <div class="key">H</div>
+                        <div class="key">J</div>
+                        <div class="key">K</div>
+                        <div class="key">L</div>
+                        <div class="key">;</div>
+                        <div class="key">'</div>
+                    </div>
+                    <div class="row">
+                        <div class="key">N</div>
+                        <div class="key">M</div>
+                        <div class="key">,</div>
+                        <div class="key">.</div>
+                        <div class="key">/</div>
+                        <div class="key modifier">SHIFT</div>
+                    </div>
+                    <div class="row" style="padding-left: 20px;">
+                        <div class="key special" style="grid-column: 1;">ENTER</div>
+                        <div class="key modifier" style="grid-column: 2;">LOWER</div>
+                        <div class="key modifier" style="grid-column: 3;">RAISE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layer">
+            <div class="layer-title">LOWER LAYER</div>
+            <div class="split">
+                <div class="left-hand">
+                    <div class="row">
+                        <div class="key empty">—</div>
+                        <div class="key empty">—</div>
+                        <div class="key empty">—</div>
+                        <div class="key">~</div>
+                        <div class="key">_</div>
+                        <div class="key">`</div>
+                    </div>
+                    <div class="row">
+                        <div class="key empty">—</div>
+                        <div class="key number">1</div>
+                        <div class="key number">2</div>
+                        <div class="key number">3</div>
+                        <div class="key number">4</div>
+                        <div class="key number">5</div>
+                    </div>
+                    <div class="row">
+                        <div class="key empty">—</div>
+                        <div class="key empty">—</div>
+                        <div class="key empty">—</div>
+                        <div class="key">[</div>
+                        <div class="key">(</div>
+                        <div class="key">{</div>
+                    </div>
+                </div>
+                <div class="split-gap">│</div>
+                <div class="right-hand">
+                    <div class="row">
+                        <div class="key">&lt;</div>
+                        <div class="key">&gt;</div>
+                        <div class="key">+</div>
+                        <div class="key">-</div>
+                        <div class="key">=</div>
+                        <div class="key empty">—</div>
+                    </div>
+                    <div class="row">
+                        <div class="key number">6</div>
+                        <div class="key number">7</div>
+                        <div class="key number">8</div>
+                        <div class="key number">9</div>
+                        <div class="key number">0</div>
+                        <div class="key">|</div>
+                    </div>
+                    <div class="row">
+                        <div class="key">}</div>
+                        <div class="key">)</div>
+                        <div class="key">]</div>
+                        <div class="key empty">—</div>
+                        <div class="key">\</div>
+                        <div class="key empty">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layer">
+            <div class="layer-title">RAISE LAYER</div>
+            <div class="split">
+                <div class="left-hand">
+                    <div class="row">
+                        <div class="key empty">—</div>
+                        <div class="key function">F1</div>
+                        <div class="key function">F2</div>
+                        <div class="key function">F3</div>
+                        <div class="key function">F4</div>
+                        <div class="key function">F5</div>
+                    </div>
+                    <div class="row">
+                        <div class="key empty">—</div>
+                        <div class="key">VOL-</div>
+                        <div class="key">VOL+</div>
+                        <div class="key">PREV</div>
+                        <div class="key">PLAY</div>
+                        <div class="key">NEXT</div>
+                    </div>
+                    <div class="row">
+                        <div class="key modifier">PWR</div>
+                        <div class="key modifier">USB</div>
+                        <div class="key modifier">BLE</div>
+                        <div class="key modifier">BT0</div>
+                        <div class="key modifier">BT1</div>
+                        <div class="key modifier">BT2</div>
+                    </div>
+                </div>
+                <div class="split-gap">│</div>
+                <div class="right-hand">
+                    <div class="row">
+                        <div class="key function">F6</div>
+                        <div class="key function">F7</div>
+                        <div class="key function">F8</div>
+                        <div class="key function">F9</div>
+                        <div class="key function">F10</div>
+                        <div class="key empty">—</div>
+                    </div>
+                    <div class="row">
+                        <div class="key">←</div>
+                        <div class="key">↓</div>
+                        <div class="key">↑</div>
+                        <div class="key">→</div>
+                        <div class="key empty">—</div>
+                        <div class="key empty">—</div>
+                    </div>
+                    <div class="row">
+                        <div class="key modifier">RGB</div>
+                        <div class="key modifier">EFFECT</div>
+                        <div class="key modifier">DIM</div>
+                        <div class="key modifier">BRIGHT</div>
+                        <div class="key empty">—</div>
+                        <div class="key modifier">BT CLR</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
