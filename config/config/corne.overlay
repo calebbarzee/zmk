@@ -1,0 +1,4 @@
+/* Override chain-length for 6 underglow + 21 per-key = 27 LEDs per side */
+&led_strip {
+    chain-length = <27>;
+};
