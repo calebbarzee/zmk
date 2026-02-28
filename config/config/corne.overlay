@@ -1,4 +1,14 @@
-/* Override chain-length for 6 underglow + 21 per-key = 27 LEDs per side */
+/*
+ * Corne Chocolate v1/v2 LED override
+ *
+ * The upstream corne shield (boards/nice_nano_nrf52840_zmk.overlay) defines:
+ *   - SPI3 on P0.06 (Pro Micro D1/TX = ATmega32u4 PD3)
+ *   - WS2812 SPI driver with chain-length=10, GRB color mapping
+ *   - zmk,underglow = &led_strip
+ *
+ * We override chain-length to match the actual hardware:
+ *   27 LEDs per side = 6 underglow + 21 per-key (SK6812MINI)
+ */
 &led_strip {
     chain-length = <27>;
 };
