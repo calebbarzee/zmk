@@ -1,14 +1,24 @@
 /*
- * Corne Chocolate v1/v2 LED override
+ * PandaKeebs Corne v3 Choc Low — LED override
  *
  * The upstream corne shield (boards/nice_nano_nrf52840_zmk.overlay) defines:
- *   - SPI3 on P0.06 (Pro Micro D1/TX = ATmega32u4 PD3)
- *   - WS2812 SPI driver with chain-length=10, GRB color mapping
+ *   - SPI3 on P0.06 (Pro Micro D1/TX = nRF52840 P0.06)
+ *   - WS2812 SPI driver with chain-length=10, GRB color mapping (3-channel)
  *   - zmk,underglow = &led_strip
  *
- * We override chain-length to match the actual hardware:
- *   27 LEDs per side = 6 underglow + 21 per-key (SK6812MINI)
+ * Hardware: 27 LEDs per side = 6 underglow + 21 per-key
+ * The LEDs are SK6812MINI-E RGBW (4-channel) despite vendor listing as RGB.
+ * Evidence: with 3-channel GRB config, only LED #1 lights (wrong color:
+ * purplish-red instead of cyan), and all subsequent LEDs stay dark due to
+ * data stream misalignment (each LED consumes 32 bits but firmware sends 24).
+ *
+ * Fix: use 4-channel GRBW color mapping so the driver sends 32 bits per LED.
+ * The white channel is always sent as 0x00 by the Zephyr driver.
  */
+
+#include <dt-bindings/led/led.h>
+
 &led_strip {
     chain-length = <27>;
+    color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE LED_COLOR_ID_WHITE>;
 };
