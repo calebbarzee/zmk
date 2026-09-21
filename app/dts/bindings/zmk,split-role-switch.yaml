@@ -1,0 +1,20 @@
+# Copyright (c) 2026 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+description: |
+  A GPIO read once at boot to select whether this half of a switchable split
+  keyboard (CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) acts as the central or the
+  peripheral. The active level (per the GPIO_ACTIVE_HIGH/LOW flags on the
+  phandle) selects the central role; the inactive level selects the
+  peripheral role. Overrides any role stored in settings for the rest of the
+  boot, and reboots the device on every change detected afterward.
+
+compatible: "zmk,split-role-switch"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: GPIO whose level selects the split role.

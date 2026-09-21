@@ -25,9 +25,11 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
+#include <zmk/split/role.h>
+
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-const struct zmk_split_transport_peripheral *active_transport;
+static const struct zmk_split_transport_peripheral *active_transport;
 
 int zmk_split_transport_peripheral_command_handler(
     const struct zmk_split_transport_peripheral *transport,
@@ -147,6 +149,12 @@ SYS_INIT(peripheral_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 int split_peripheral_listener(const zmk_event_t *eh) {
     LOG_DBG("");
+
+    if (zmk_split_role_is_central()) {
+        // Running as the central: the keymap handles local events directly.
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+
     const struct zmk_position_state_changed *pos_ev;
     if ((pos_ev = as_zmk_position_state_changed(eh)) != NULL) {
         struct zmk_split_transport_peripheral_event ev = {

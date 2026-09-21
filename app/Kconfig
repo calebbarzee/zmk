@@ -133,7 +133,7 @@ menu "Output Types"
 
 config ZMK_USB
     bool "USB"
-    depends on (!ZMK_SPLIT || (ZMK_SPLIT && ZMK_SPLIT_ROLE_CENTRAL))
+    depends on (!ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
     select USB
     select USB_DEVICE_STACK
     select USB_DEVICE_HID
@@ -228,7 +228,7 @@ config BT_GATT_NOTIFY_MULTIPLE
     default n
 
 config BT_GATT_AUTO_SEC_REQ
-    default (ZMK_SPLIT_BLE && !ZMK_SPLIT_ROLE_CENTRAL)
+    default (ZMK_SPLIT_BLE && !ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
 
 config BT_PERIPHERAL_PREF_MIN_INT
     default 6

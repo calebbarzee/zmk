@@ -12,6 +12,7 @@
 
 #include <zmk/pm.h>
 #include <zmk/behavior.h>
+#include <zmk/split/role.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -24,8 +25,7 @@ struct behavior_soft_off_data {
     uint32_t press_start;
 };
 
-#define IS_SPLIT_PERIPHERAL                                                                        \
-    (IS_ENABLED(CONFIG_ZMK_SPLIT) && !IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL))
+#define IS_SPLIT_PERIPHERAL (IS_ENABLED(CONFIG_ZMK_SPLIT) && !zmk_split_role_is_central())
 
 static int on_keymap_binding_pressed(struct zmk_behavior_binding *binding,
                                      struct zmk_behavior_binding_event event) {
@@ -55,7 +55,7 @@ static int on_keymap_binding_released(struct zmk_behavior_binding *binding,
         uint32_t hold_time = k_uptime_get() - data->press_start;
 
         if (hold_time > config->hold_time_ms) {
-            if (IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)) {
+            if (IS_ENABLED(CONFIG_ZMK_SPLIT) && zmk_split_role_is_central()) {
                 k_sleep(K_MSEC(100));
             }
             zmk_pm_soft_off();

@@ -15,17 +15,20 @@ config ZMK_SPLIT_BLE_ROLE_CENTRAL
     bool
     select ZMK_SPLIT_ROLE_CENTRAL
 
-config ZMK_SPLIT_ROLE_CENTRAL
+config ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
     select BT_CENTRAL
     select BT_GATT_CLIENT
     select BT_GATT_AUTO_DISCOVER_CCC
     select BT_SCAN_WITH_IDENTITY
 
+config ZMK_SPLIT_ROLE_PERIPHERAL_CAPABLE
+    select BT_FILTER_ACCEPT_LIST if ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS > 1
+
 # Bump this value needed for concurrent GATT discovery of splits
 config BT_ATT_TX_COUNT
-    default 10 if ZMK_SPLIT_ROLE_CENTRAL
+    default 10 if ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
 
-if ZMK_SPLIT_ROLE_CENTRAL
+if ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
 
 config ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
     int "Number of peripherals that will connect to the central."
@@ -74,9 +77,9 @@ config ZMK_SPLIT_BLE_PREF_TIMEOUT
     int "Supervision timeout to use for split central/peripheral connection"
     default 400
 
-endif # ZMK_SPLIT_ROLE_CENTRAL
+endif # ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
 
-if !ZMK_SPLIT_ROLE_CENTRAL
+if ZMK_SPLIT_ROLE_PERIPHERAL_CAPABLE
 
 config ZMK_SPLIT_BLE_PERIPHERAL_STACK_SIZE
     int "BLE split peripheral notify thread stack size"
@@ -90,8 +93,20 @@ config ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE
     int "Max number of key position state events to queue to send to the central"
     default 10
 
-config BT_MAX_PAIRED
+config ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS
+    int "Number of centrals this peripheral may bond with"
     default 1
+    range 1 4
+    help
+      A peripheral that may connect to more than one central, for example the
+      other half in direct mode and a dongle in dongle mode, needs one bond
+      per central. Until this many centrals are bonded the peripheral stays
+      open for pairing.
+
+if !ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
+
+config BT_MAX_PAIRED
+    default ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS
 
 config BT_MAX_CONN
     default 1
@@ -100,7 +115,9 @@ config BT_MAX_CONN
 config BT_GAP_AUTO_UPDATE_CONN_PARAMS
     default n
 
-endif # !ZMK_SPLIT_ROLE_CENTRAL
+endif # !ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
+
+endif # ZMK_SPLIT_ROLE_PERIPHERAL_CAPABLE
 
 endmenu
 

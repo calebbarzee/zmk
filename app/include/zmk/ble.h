@@ -10,11 +10,20 @@
 #include <zmk/ble/profile.h>
 
 #define ZMK_BLE_IS_CENTRAL                                                                         \
-    (IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL))
+    (IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE))
 
 #if ZMK_BLE_IS_CENTRAL
-#define ZMK_BLE_PROFILE_COUNT (CONFIG_BT_MAX_PAIRED - CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS)
 #define ZMK_SPLIT_BLE_PERIPHERAL_COUNT CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
+// On a switchable build the same bond pool also has to cover the bond(s) the
+// peripheral role uses on its own identity after a runtime switch, so those
+// are reserved out of the profile count too.
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE)
+#define ZMK_BLE_PROFILE_COUNT                                                                      \
+    (CONFIG_BT_MAX_PAIRED - CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS -                             \
+     CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS)
+#else
+#define ZMK_BLE_PROFILE_COUNT (CONFIG_BT_MAX_PAIRED - CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS)
+#endif
 #else
 #define ZMK_BLE_PROFILE_COUNT CONFIG_BT_MAX_PAIRED
 #endif
@@ -44,6 +53,6 @@ int zmk_ble_unpair_all(void);
 
 int zmk_ble_set_device_name(char *name);
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
 int zmk_ble_put_peripheral_addr(const bt_addr_le_t *addr);
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL) */
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE) */

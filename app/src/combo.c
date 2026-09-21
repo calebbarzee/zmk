@@ -21,6 +21,7 @@
 #include <zmk/hid.h>
 #include <zmk/matrix.h>
 #include <zmk/keymap.h>
+#include <zmk/split/role.h>
 #include <zmk/virtual_key_position.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -489,6 +490,11 @@ static void combo_timeout_handler(struct k_work *item) {
 static int position_state_changed_listener(const zmk_event_t *ev) {
     struct zmk_position_state_changed *data = as_zmk_position_state_changed(ev);
     if (data == NULL) {
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+
+    if (!zmk_split_role_is_central()) {
+        // Running as the split peripheral: combos are resolved on the central.
         return ZMK_EV_EVENT_BUBBLE;
     }
 

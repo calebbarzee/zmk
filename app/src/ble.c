@@ -34,6 +34,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/ble.h>
 #include <zmk/keys.h>
 #include <zmk/split/bluetooth/uuid.h>
+#include <zmk/split/role.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/ble_active_profile_changed.h>
 
@@ -77,11 +78,11 @@ static struct bt_data zmk_ble_ad[] = {
                   ),
 };
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
 
 static bt_addr_le_t peripheral_addrs[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL) */
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE) */
 
 static void raise_profile_changed_event(void) {
     raise_zmk_ble_active_profile_changed((struct zmk_ble_active_profile_changed){
@@ -175,6 +176,11 @@ bool zmk_ble_profile_is_connected(uint8_t index) {
     advertising_status = ZMK_ADV_CONN;
 
 int update_advertising(void) {
+    if (!zmk_split_role_is_central()) {
+        // Running as the split peripheral: the split transport advertises, not the host profile.
+        return 0;
+    }
+
     int err = 0;
     bt_addr_le_t *addr;
     struct bt_conn *conn;
@@ -375,7 +381,7 @@ int zmk_ble_set_device_name(char *name) {
     return update_advertising();
 }
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
 
 int zmk_ble_put_peripheral_addr(const bt_addr_le_t *addr) {
     for (int i = 0; i < ZMK_SPLIT_BLE_PERIPHERAL_COUNT; i++) {
@@ -413,7 +419,7 @@ int zmk_ble_put_peripheral_addr(const bt_addr_le_t *addr) {
     return -ENOMEM;
 }
 
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL) */
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE) */
 
 #if IS_ENABLED(CONFIG_SETTINGS)
 
@@ -464,7 +470,7 @@ static int ble_profiles_handle_set(const char *name, size_t len, settings_read_c
             return err;
         }
     }
-#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
     else if (settings_name_steq(name, "peripheral_addresses", &next) && next) {
         if (len != sizeof(bt_addr_le_t)) {
             return -EINVAL;
@@ -509,6 +515,11 @@ static void connected(struct bt_conn *conn, uint8_t err) {
         return;
     }
 
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && info.id != BT_ID_DEFAULT) {
+        // A split central connecting to the peripheral role's own identity, not a host.
+        return;
+    }
+
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
     advertising_status = ZMK_ADV_NONE;
 
@@ -540,6 +551,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason) {
 
     if (info.role != BT_CONN_ROLE_PERIPHERAL) {
         LOG_DBG("SKIPPING FOR ROLE %d", info.role);
+        return;
+    }
+
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && info.id != BT_ID_DEFAULT) {
         return;
     }
 
@@ -633,6 +648,12 @@ static enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
     struct bt_conn_info info;
     bt_conn_get_info(conn, &info);
 
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && info.id != BT_ID_DEFAULT) {
+        // Pairing on the split peripheral role's own identity is not bound by the host
+        // profile policy below.
+        return BT_SECURITY_ERR_SUCCESS;
+    }
+
     LOG_DBG("role %d, open? %s", info.role, zmk_ble_active_profile_is_open() ? "yes" : "no");
     if (info.role == BT_CONN_ROLE_PERIPHERAL && !pairing_allowed_for_current_profile(conn)) {
         LOG_WRN("Rejecting pairing request to taken profile %d", active_profile);
@@ -652,6 +673,10 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded) {
 
     if (info.role != BT_CONN_ROLE_PERIPHERAL) {
         LOG_DBG("SKIPPING FOR ROLE %d", info.role);
+        return;
+    }
+
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && info.id != BT_ID_DEFAULT) {
         return;
     }
 

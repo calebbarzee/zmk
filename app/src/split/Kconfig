@@ -8,6 +8,43 @@ if ZMK_SPLIT
 
 config ZMK_SPLIT_ROLE_CENTRAL
     bool "Split central device"
+    select ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
+    help
+      Build this device as the split central. When ZMK_SPLIT_ROLE_SWITCHABLE
+      is enabled this only selects the default role used until a role has
+      been stored in settings.
+
+config ZMK_SPLIT_ROLE_SWITCHABLE
+    bool "Switch split role at runtime"
+    depends on ZMK_SPLIT_BLE && !ZMK_SPLIT_WIRED
+    select SETTINGS
+    select ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
+    select ZMK_SPLIT_ROLE_PERIPHERAL_CAPABLE
+    help
+      Build both the central and the peripheral split roles into one image and
+      pick the active role at boot from a stored setting or a GPIO switch. Use
+      the split_role behavior to change the stored role. Changing role reboots
+      the device.
+
+# Hidden helpers. Every existing role gate that decides which code is
+# compiled or which Kconfig defaults apply switches to one of these two, so
+# that a switchable build (which needs both roles' code) still builds each
+# gate correctly.
+#
+# These are `select`-driven rather than `default ... if` on purpose:
+# ZMK_SPLIT_ROLE_SWITCHABLE depends on SETTINGS, and SETTINGS pulls in a
+# large, unrelated Zephyr `select`/`imply` web (USB mass storage, flash,
+# OpenThread, ...) that eventually reaches back to ZMK_USB's own dependency
+# on ZMK_SPLIT_ROLE_CENTRAL_CAPABLE. A `default y if ZMK_SPLIT_ROLE_SWITCHABLE`
+# here would make Kconfig's dependency-loop checker trace through that whole
+# web while resolving this symbol's value and report a spurious cycle;
+# `select`, pushed from the two roles that need it, does not.
+config ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
+    bool
+
+config ZMK_SPLIT_ROLE_PERIPHERAL_CAPABLE
+    bool
+    default y if !ZMK_SPLIT_ROLE_CENTRAL
 
 config ZMK_SPLIT_BLE
     bool "BLE Split"

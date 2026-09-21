@@ -33,6 +33,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/pointing/input_split.h>
 #include <zmk/hid_indicators_types.h>
 #include <zmk/physical_layouts.h>
+#include <zmk/split/role.h>
 
 static int start_scanning(void);
 
@@ -1249,7 +1250,8 @@ static struct zmk_split_transport_status split_central_bt_get_status() {
     }
 
     return (struct zmk_split_transport_status){
-        .available = !IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) && settings_loaded,
+        .available = !IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) && settings_loaded &&
+                     zmk_split_role_is_central(),
         .enabled = is_enabled,
         .connections = conn_status,
     };

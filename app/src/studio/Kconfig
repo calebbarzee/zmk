@@ -3,7 +3,7 @@
 
 menuconfig ZMK_STUDIO
     bool "Studio Support"
-    select ZMK_STUDIO_RPC if !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+    select ZMK_STUDIO_RPC if !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
     select PM_DEVICE # Needed for physical layout switching
     help
       Add firmware support for realtime keymap updates (ZMK Studio)

@@ -8,7 +8,17 @@ if ZMK_SPLIT_BLE
 config ZMK_SPLIT_BLE_PRIORITY
     default 1
 
-if ZMK_SPLIT_ROLE_CENTRAL
+# A switchable half needs bond storage for both roles at once: the host
+# profiles and split-peripheral bond it uses as a central, plus the bond(s)
+# it uses as a peripheral after switching. Placed before the plain
+# ZMK_SPLIT_ROLE_CENTRAL_CAPABLE default below so it wins when both apply.
+config BT_MAX_PAIRED
+    default 7 if ZMK_SPLIT_ROLE_SWITCHABLE
+
+config BT_ID_MAX
+    default 2 if ZMK_SPLIT_ROLE_SWITCHABLE
+
+if ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
 
 config ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS
     default 1
@@ -19,7 +29,7 @@ config BT_MAX_CONN
 config BT_MAX_PAIRED
     default 6
 
-#ZMK_SPLIT_BLE && ZMK_SPLIT_ROLE_CENTRAL
+#ZMK_SPLIT_BLE && ZMK_SPLIT_ROLE_CENTRAL_CAPABLE
 endif
 
 endif

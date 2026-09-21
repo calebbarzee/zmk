@@ -16,6 +16,7 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #include <zmk/endpoints.h>
+#include <zmk/split/role.h>
 
 // Reimplement some of the device work from Zephyr PM to work with the new `sys_poweroff` API.
 // TODO: Tweak this to smarter runtime PM of subsystems on sleep.
@@ -92,10 +93,12 @@ int zmk_pm_soft_off(void) {
     size_t device_count;
     const struct device *devs;
 
-#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    zmk_endpoint_clear_reports();
-    // Need to sleep to give any other threads a chance so submit endpoint data.
-    k_sleep(K_MSEC(100));
+#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
+    if (zmk_split_role_is_central()) {
+        zmk_endpoint_clear_reports();
+        // Need to sleep to give any other threads a chance so submit endpoint data.
+        k_sleep(K_MSEC(100));
+    }
 #endif
 
     device_count = z_device_get_all_static(&devs);

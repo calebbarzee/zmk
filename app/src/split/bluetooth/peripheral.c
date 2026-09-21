@@ -37,6 +37,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/split_peripheral_status_changed.h>
 #include <zmk/ble.h>
 #include <zmk/split/bluetooth/uuid.h>
+#include <zmk/split/role.h>
 
 static const struct bt_data zmk_ble_ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -48,29 +49,85 @@ static bool is_connected = false;
 
 static bool is_bonded = false;
 
-static void each_bond(const struct bt_bond_info *info, void *user_data) {
-    bt_addr_le_t *addr = (bt_addr_le_t *)user_data;
-
-    if (bt_addr_le_cmp(&info->addr, BT_ADDR_LE_NONE) != 0) {
-        bt_addr_le_copy(addr, &info->addr);
+/* On a switchable build the peripheral role advertises and bonds on its own BT
+ * identity. Host bonds stay on identity 0, so a host never recognizes the
+ * peripheral advertiser and bt_foreach_bond() here only yields split centrals. */
+static uint8_t peripheral_id(void) {
+    if (!IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE)) {
+        return BT_ID_DEFAULT;
     }
+
+    bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+    size_t count = ARRAY_SIZE(addrs);
+
+    bt_id_get(addrs, &count);
+    if (count < 2) {
+        int err = bt_id_create(NULL, NULL);
+        if (err < 0) {
+            LOG_ERR("Failed to create the split peripheral BT identity (%d)", err);
+            return BT_ID_DEFAULT;
+        }
+    }
+
+    return 1;
+}
+
+struct bonded_centrals {
+    bt_addr_le_t addrs[CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS];
+    size_t count;
+};
+
+static void each_bond(const struct bt_bond_info *info, void *user_data) {
+    struct bonded_centrals *bonds = (struct bonded_centrals *)user_data;
+
+    if (bt_addr_le_cmp(&info->addr, BT_ADDR_LE_NONE) == 0) {
+        return;
+    }
+
+    if (bonds->count < ARRAY_SIZE(bonds->addrs)) {
+        bt_addr_le_copy(&bonds->addrs[bonds->count], &info->addr);
+    }
+
+    bonds->count++;
 }
 
 static int start_advertising(bool low_duty) {
-    bt_addr_le_t central_addr = bt_addr_le_none;
+    struct bonded_centrals bonds = {0};
+    uint8_t id = peripheral_id();
 
-    bt_foreach_bond(BT_ID_DEFAULT, each_bond, &central_addr);
+    bt_foreach_bond(id, each_bond, &bonds);
 
-    if (bt_addr_le_cmp(&central_addr, BT_ADDR_LE_NONE) != 0) {
-        is_bonded = true;
-        struct bt_le_adv_param adv_param = low_duty ? *BT_LE_ADV_CONN_DIR_LOW_DUTY(&central_addr)
-                                                    : *BT_LE_ADV_CONN_DIR(&central_addr);
-        return bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);
-    } else {
-        is_bonded = false;
-        return bt_le_adv_start(BT_LE_ADV_CONN_FAST_2, zmk_ble_ad, ARRAY_SIZE(zmk_ble_ad), NULL, 0);
+    is_bonded = bonds.count > 0;
+
+    if (bonds.count < CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS) {
+        // Open for pairing until every configured central has bonded.
+        struct bt_le_adv_param adv_param = *BT_LE_ADV_CONN_FAST_2;
+        adv_param.id = id;
+        return bt_le_adv_start(&adv_param, zmk_ble_ad, ARRAY_SIZE(zmk_ble_ad), NULL, 0);
     }
-};
+
+    if (CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS == 1 ||
+        !IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
+        struct bt_le_adv_param adv_param = low_duty ? *BT_LE_ADV_CONN_DIR_LOW_DUTY(&bonds.addrs[0])
+                                                    : *BT_LE_ADV_CONN_DIR(&bonds.addrs[0]);
+        adv_param.id = id;
+        return bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);
+    }
+
+    // Several bonded centrals: any of them may connect, nobody else.
+    bt_le_filter_accept_list_clear();
+    for (size_t i = 0; i < MIN(bonds.count, ARRAY_SIZE(bonds.addrs)); i++) {
+        int err = bt_le_filter_accept_list_add(&bonds.addrs[i]);
+        if (err < 0) {
+            LOG_WRN("Failed to add bonded central %d to the accept list (%d)", i, err);
+        }
+    }
+
+    struct bt_le_adv_param adv_param = *BT_LE_ADV_CONN_FAST_2;
+    adv_param.id = id;
+    adv_param.options |= BT_LE_ADV_OPT_FILTER_CONN | BT_LE_ADV_OPT_FILTER_SCAN_REQ;
+    return bt_le_adv_start(&adv_param, zmk_ble_ad, ARRAY_SIZE(zmk_ble_ad), NULL, 0);
+}
 
 static bool low_duty_advertising = false;
 static bool enabled = false;
@@ -85,6 +142,12 @@ static void advertising_cb(struct k_work *work) {
 K_WORK_DEFINE(advertising_work, advertising_cb);
 
 static void connected(struct bt_conn *conn, uint8_t err) {
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && !enabled) {
+        // A switchable half running as central: connections belong to the host or
+        // to the central transport, not to this role.
+        return;
+    }
+
     is_connected = (err == 0);
 
     raise_zmk_split_peripheral_status_changed(
@@ -105,6 +168,10 @@ static void recycled(void) {
 
 static void disconnected(struct bt_conn *conn, uint8_t reason) {
     char addr[BT_ADDR_LE_STR_LEN];
+
+    if (IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE) && !enabled && !is_connected) {
+        return;
+    }
 
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -206,7 +273,8 @@ static bool settings_loaded = false;
 
 static struct zmk_split_transport_status split_peripheral_bt_get_status(void) {
     return (struct zmk_split_transport_status){
-        .available = !IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) && settings_loaded,
+        .available = !IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) && settings_loaded &&
+                     !zmk_split_role_is_central(),
         .enabled = enabled,
         .connections = zmk_split_bt_peripheral_is_connected()
                            ? ZMK_SPLIT_TRANSPORT_CONNECTIONS_STATUS_ALL_CONNECTED
@@ -238,7 +306,7 @@ static int zmk_peripheral_ble_complete_startup(void) {
 #if IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START)
     LOG_WRN("Clearing all existing BLE bond information from the keyboard");
 
-    bt_unpair(BT_ID_DEFAULT, NULL);
+    bt_unpair(peripheral_id(), NULL);
 #else
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_info_cb_register(&zmk_peripheral_ble_auth_info_cb);
@@ -269,7 +337,9 @@ static struct settings_handler ble_peripheral_settings_handler = {
 static int zmk_peripheral_ble_init(void) {
     int err = bt_enable(NULL);
 
-    if (err) {
+    // A switchable build also compiles src/ble.c, which may have already
+    // enabled the BT stack from its own SYS_INIT at the same priority.
+    if (err < 0 && err != -EALREADY) {
         LOG_ERR("BLUETOOTH FAILED (%d)", err);
         return err;
     }

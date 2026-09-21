@@ -17,8 +17,9 @@
 
 #endif
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
 #include <zmk/split/central.h>
+#include <zmk/split/role.h>
 #endif
 
 #include <drivers/behavior.h>
@@ -94,8 +95,9 @@ int zmk_behavior_invoke_binding(const struct zmk_behavior_binding *src_binding,
     case BEHAVIOR_LOCALITY_CENTRAL:
         return invoke_locally(&binding, event, pressed);
     case BEHAVIOR_LOCALITY_EVENT_SOURCE:
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-        if (event.source == ZMK_POSITION_STATE_CHANGE_SOURCE_LOCAL) {
+#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
+        if (event.source == ZMK_POSITION_STATE_CHANGE_SOURCE_LOCAL ||
+            !zmk_split_role_is_central()) {
             return invoke_locally(&binding, event, pressed);
         } else {
             return zmk_split_central_invoke_behavior(event.source, &binding, event, pressed);
@@ -104,9 +106,11 @@ int zmk_behavior_invoke_binding(const struct zmk_behavior_binding *src_binding,
         return invoke_locally(&binding, event, pressed);
 #endif
     case BEHAVIOR_LOCALITY_GLOBAL:
-#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-        for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT; i++) {
-            zmk_split_central_invoke_behavior(i, &binding, event, pressed);
+#if IS_ENABLED(CONFIG_ZMK_SPLIT) && IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL_CAPABLE)
+        if (zmk_split_role_is_central()) {
+            for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT; i++) {
+                zmk_split_central_invoke_behavior(i, &binding, event, pressed);
+            }
         }
 #endif
         return invoke_locally(&binding, event, pressed);
