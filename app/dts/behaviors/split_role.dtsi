@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 The ZMK Contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/ {
+    behaviors {
+        // Behavior can be invoked on peripherals, so name must be <= 8 characters.
+        split_role: splrole {
+            compatible = "zmk,behavior-split-role";
+            #binding-cells = <1>;
+            display-name = "Split Role";
+        };
+    };
+};
