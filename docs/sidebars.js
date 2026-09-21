@@ -86,6 +86,7 @@ module.exports = {
             "keymaps/behaviors/backlight",
             "keymaps/behaviors/power",
             "keymaps/behaviors/soft-off",
+            "keymaps/behaviors/split-role",
             "keymaps/behaviors/studio-unlock",
           ],
         },

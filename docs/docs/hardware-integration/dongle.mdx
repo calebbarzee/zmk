@@ -338,3 +338,29 @@ Flashing standard ZMK firmware on a device will not clear any previous settings.
 To use your dongled keyboard with [ZMK Studio](../features/studio.md), apply the instructions for [building with Studio](../features/studio.md#building) to the dongle.
 
 If you ever want to "undongle" your keyboard, simply remove these CMake arguments, perform the settings reset procedure, and flash the newly built firmware to your devices.
+
+## Switching between dongle and direct modes without reflashing
+
+The setup above bakes each part's role into its firmware, so moving between a direct connection and a dongle normally means rebuilding and reflashing. A keyboard built with [`CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE`](../config/split.md#kconfig) instead builds both the central and peripheral roles into one image for the switchable half, and the [split role behavior](../keymaps/behaviors/split-role.md) or a [split role switch](../config/split.md#split-role-switch) changes which role is active with just a reboot.
+
+### Configuration
+
+Building on the [role model](../features/split-keyboards.md#central-and-peripheral-roles) above, with half A, half B, and a dongle:
+
+- Half A keeps its shield's default role (central) and adds `CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE=y`.
+- Half B sets `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS=2`, so it can hold a bond to both half A and the dongle.
+- The dongle is a standard central build, with `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS=2`.
+- Somewhere in the keymap (shared by every part, since [global locality](../features/split-keyboards.md#global-locality-behaviors) forwards it), add a binding such as `&split_role SPLIT_ROLE_TOGGLE`.
+
+### First-time pairing
+
+1. Flash all three parts and pair them in direct mode first: half A as central, half B as peripheral. Confirm the keyboard works normally.
+2. Plug in the dongle and press `&split_role SPLIT_ROLE_PERIPHERAL` on either half. Half A reboots as a peripheral and advertises openly, and half B loses its connection to half A and advertises openly too, since its second bond slot is still free. The dongle pairs with both.
+3. The keyboard now runs through the dongle. To go back, press `&split_role SPLIT_ROLE_CENTRAL`; the dongle forwards the command to half A over the split link, and half A reboots as central. Unplug the dongle so half B advertises to half A instead of waiting for the dongle.
+
+### Limitations
+
+- Half B stays open for pairing until it has bonded to `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS` centrals; while open, it consumes more power (see the [pairing power note](../features/split-keyboards.md#pairing-for-wireless-split-keyboards)).
+- Display widgets follow each part's default (Kconfig) role, not the runtime role.
+- Runtime role switching is not supported over the wired split transport; it requires `CONFIG_ZMK_SPLIT_BLE`.
+- A switchable half running in peripheral mode still enumerates as a USB device (if plugged in), but does not send HID reports, since only the central role produces them.

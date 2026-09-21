@@ -11,29 +11,31 @@ See [Configuration Overview](index.md) for instructions on how to change these s
 
 Following [split keyboard](../features/split-keyboards.md) settings are defined in [zmk/app/src/split/Kconfig](https://github.com/zmkfirmware/zmk/blob/main/app/src/split/Kconfig).
 
-| Config                                       | Type | Description                                                              | Default |
-| -------------------------------------------- | ---- | ------------------------------------------------------------------------ | ------- |
-| `CONFIG_ZMK_SPLIT`                           | bool | Enable split keyboard support                                            | n       |
-| `CONFIG_ZMK_SPLIT_ROLE_CENTRAL`              | bool | `y` for central device, `n` for peripheral                               | n       |
-| `CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS` | bool | Enable split keyboard support for passing indicator state to peripherals | n       |
+| Config                                       | Type | Description                                                                                                                                                                                         | Default |
+| -------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `CONFIG_ZMK_SPLIT`                           | bool | Enable split keyboard support                                                                                                                                                                       | n       |
+| `CONFIG_ZMK_SPLIT_ROLE_CENTRAL`              | bool | `y` for central device, `n` for peripheral. When `CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE` is enabled this only selects the default role, used until a role has been stored or read from a role switch.    | n       |
+| `CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE`           | bool | Build both roles into one image and pick the active one at runtime; see [switching central/peripheral role at runtime](../features/split-keyboards.md#switching-centralperipheral-role-at-runtime). | n       |
+| `CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS` | bool | Enable split keyboard support for passing indicator state to peripherals                                                                                                                            | n       |
 
 ### Bluetooth Splits
 
 Following bluetooth [split keyboard](../features/split-keyboards.md) settings are defined in [zmk/app/src/split/bluetooth/Kconfig](https://github.com/zmkfirmware/zmk/blob/main/app/src/split/bluetooth/Kconfig).
 
-| Config                                                  | Type | Description                                                                | Default                                    |
-| ------------------------------------------------------- | ---- | -------------------------------------------------------------------------- | ------------------------------------------ |
-| `CONFIG_ZMK_SPLIT_BLE`                                  | bool | Use BLE to communicate between split keyboard halves                       | y                                          |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS`              | int  | Number of peripherals that will connect to the central                     | 1                                          |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING`   | bool | Enable fetching split peripheral battery levels to the central side        | n                                          |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_PROXY`      | bool | Enable central reporting of split battery levels to hosts                  | n                                          |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_QUEUE_SIZE` | int  | Max number of battery level events to queue when received from peripherals | `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS` |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE`      | int  | Max number of key state events to queue when received from peripherals     | 5                                          |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_SPLIT_RUN_STACK_SIZE`     | int  | Stack size of the BLE split central write thread                           | 512                                        |
-| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_SPLIT_RUN_QUEUE_SIZE`     | int  | Max number of behavior run events to queue to send to the peripheral(s)    | 5                                          |
-| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_STACK_SIZE`            | int  | Stack size of the BLE split peripheral notify thread                       | 756                                        |
-| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_PRIORITY`              | int  | Priority of the BLE split peripheral notify thread                         | 5                                          |
-| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE`   | int  | Max number of key state events to queue to send to the central             | 10                                         |
+| Config                                                  | Type | Description                                                                                                                                                                                                                                                                                                           | Default                                    |
+| ------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `CONFIG_ZMK_SPLIT_BLE`                                  | bool | Use BLE to communicate between split keyboard halves                                                                                                                                                                                                                                                                  | y                                          |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS`              | int  | Number of peripherals that will connect to the central                                                                                                                                                                                                                                                                | 1                                          |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING`   | bool | Enable fetching split peripheral battery levels to the central side                                                                                                                                                                                                                                                   | n                                          |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_PROXY`      | bool | Enable central reporting of split battery levels to hosts                                                                                                                                                                                                                                                             | n                                          |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_QUEUE_SIZE` | int  | Max number of battery level events to queue when received from peripherals                                                                                                                                                                                                                                            | `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS` |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE`      | int  | Max number of key state events to queue when received from peripherals                                                                                                                                                                                                                                                | 5                                          |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_SPLIT_RUN_STACK_SIZE`     | int  | Stack size of the BLE split central write thread                                                                                                                                                                                                                                                                      | 512                                        |
+| `CONFIG_ZMK_SPLIT_BLE_CENTRAL_SPLIT_RUN_QUEUE_SIZE`     | int  | Max number of behavior run events to queue to send to the peripheral(s)                                                                                                                                                                                                                                               | 5                                          |
+| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_STACK_SIZE`            | int  | Stack size of the BLE split peripheral notify thread                                                                                                                                                                                                                                                                  | 756                                        |
+| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_PRIORITY`              | int  | Priority of the BLE split peripheral notify thread                                                                                                                                                                                                                                                                    | 5                                          |
+| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_POSITION_QUEUE_SIZE`   | int  | Max number of key state events to queue to send to the central                                                                                                                                                                                                                                                        | 10                                         |
+| `CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_CENTRALS`              | int  | Number of centrals a peripheral may bond with, for example the other half in direct mode and a dongle in dongle mode. Until this many centrals are bonded, the peripheral stays open for pairing. On a switchable half, values above 1 also need a larger `CONFIG_BT_MAX_PAIRED` to keep the number of host profiles. | 1                                          |
 
 ### Wired Splits
 
@@ -88,3 +90,22 @@ Once you have a properly configured UART device, it needs to be assigned in a ne
     };
 };
 ```
+
+### Split Role Switch
+
+On a build with `CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE` enabled, a GPIO can select the split role at boot instead of (or alongside) the [split role behavior](../keymaps/behaviors/split-role.md). Add a node with a compatible value of `"zmk,split-role-switch"`:
+
+```dts
+/ {
+    split_role_switch {
+        compatible = "zmk,split-role-switch";
+        gpios = <&pro_micro 5 GPIO_ACTIVE_HIGH>;
+    };
+};
+```
+
+| Property | Type          | Description                                      |
+| -------- | ------------- | ------------------------------------------------ |
+| `gpios`  | phandle-array | GPIO read once at boot to select the split role. |
+
+The active level (per the `GPIO_ACTIVE_HIGH`/`GPIO_ACTIVE_LOW` flags on the phandle) selects the central role; the inactive level selects the peripheral role. The switch position is read once at boot and overrides any role stored in settings for that boot. Flipping the switch while running stores the new role and reboots the device.

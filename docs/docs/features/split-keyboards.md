@@ -66,6 +66,10 @@ ZMK features highly experimental support for switching between the two available
 
 Currently, there are no open source/reference designs that implement this functionality, and only experienced designers with extensive EE knowledge should attempt to implement a design with this functionality.
 
+### Switching Central/Peripheral Role at Runtime
+
+A keyboard built with [`CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE`](../config/split.md#kconfig) can change which part plays the central role without reflashing, using the [split role behavior](../keymaps/behaviors/split-role.md) or a GPIO switch. This is what lets a keyboard move between a direct Bluetooth connection and a [dongle](../hardware-integration/dongle.mdx) without a new firmware build; see [switching between dongle and direct modes without reflashing](../hardware-integration/dongle.mdx#switching-between-dongle-and-direct-modes-without-reflashing).
+
 ## Building and Flashing Firmware
 
 ZMK split keyboards require building and flashing different firmware files for each split part.
@@ -106,6 +110,7 @@ These are behaviors that affect all keyboard parts, such as changing lighting ef
 - [Backlight behaviors](../keymaps/behaviors/backlight.md)
 - [Power management behaviors](../keymaps/behaviors/power.md)
 - [Soft off behavior](../keymaps/behaviors/soft-off.md)
+- [Split role behavior](../keymaps/behaviors/split-role.md)
 
 ### Source Locality Behaviors
 
