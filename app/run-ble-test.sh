@@ -61,7 +61,12 @@ echo "Running $testcase:"
 shopt -s nullglob
 for file in $(pwd)/$testcase/peripheral*.overlay ; do
     pn=$(basename -s .overlay ${file})
-    west build -d build/${testcase%%/}_${pn}/ -b nrf52_bsim//zmk_test_mock -- -DZMK_CONFIG="$(pwd)/$testcase" -DEXTRA_DTC_OVERLAY_FILE="${file}" > /dev/null 2>&1
+    peripheral_extra_args=""
+    conf_file="${file%.overlay}.conf"
+    if [ -e "${conf_file}" ]; then
+        peripheral_extra_args="-DEXTRA_CONF_FILE=${conf_file}"
+    fi
+    west build -d build/${testcase%%/}_${pn}/ -b nrf52_bsim//zmk_test_mock -- -DZMK_CONFIG="$(pwd)/$testcase" -DEXTRA_DTC_OVERLAY_FILE="${file}" ${peripheral_extra_args} > /dev/null 2>&1
 
     if [ $? -gt 0 ]; then
         echo "FAILED: $testcase peripheral ${pn} did not build" | tee -a ./build/tests/pass-fail.log
@@ -74,6 +79,14 @@ extra_cmake_args=""
 if ls $(pwd)/$testcase/peripheral*.overlay >/dev/null 2>&1; then
     echo "Found peripheral overlays, building the test as a split central"
     extra_cmake_args="-DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=y"
+fi
+
+# A test may carry an extra-cmake-args file (same convention as run-test.sh)
+# with additional -D args for the primary testcase build only, e.g. to opt
+# a switchable-role test into CONFIG_ZMK_SPLIT_ROLE_SWITCHABLE=y without
+# affecting the shared peripheral*.overlay builds above.
+if [ -f "$(pwd)/$testcase/extra-cmake-args" ]; then
+    extra_cmake_args="${extra_cmake_args} $(cat $(pwd)/$testcase/extra-cmake-args)"
 fi
 
 west build -d build/$testcase -b nrf52_bsim//zmk_test_mock -- -DZMK_CONFIG="$(pwd)/$testcase" ${extra_cmake_args} > /dev/null 2>&1
